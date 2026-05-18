@@ -1,31 +1,14 @@
-Source: foundry-linux-retro-tools
-Section: metapackages
-Priority: optional
-Maintainer: World Foundry <packages@worldfoundry.org>
-Build-Depends: debhelper-compat (= 13)
-Standards-Version: 4.7.0
-Homepage: https://foundrylinux.org/
-Rules-Requires-Root: no
-
 Package: foundry-linux-retro-tools
+Version: 1.0.4
 Architecture: all
-Depends: ${misc:Depends},
- mame,
- mame-tools,
- dasm,
- cc65,
- z80dasm,
- z80asm,
- radare2,
- binwalk,
- sox,
- binutils-m68k-linux-gnu,
- xa65,
- f9dasm,
- libvgm,
- vgmstream
+Maintainer: World Foundry <packages@worldfoundry.org>
+Installed-Size: 8
+Depends: mame, mame-tools, dasm, cc65, z80dasm, z80asm, radare2, binwalk, sox, binutils-m68k-linux-gnu, xa65, f9dasm, libvgm, vgmstream
 Recommends: ghidra
 Suggests: java-common
+Section: metapackages
+Priority: optional
+Homepage: https://foundrylinux.org/
 Description: arcade reverse-engineering and porting toolchain
  Tooling for porting classic arcade ROMs to the World Foundry engine:
  MAME (debugger + tools), 6502/Z80/68k/6809 disassemblers and assemblers,
