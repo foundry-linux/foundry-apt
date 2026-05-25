@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# Build every package under packages/ into dist/.
+# Build packages under packages/ into dist/.
+#
+# Usage:
+#   bash scripts/build-all.sh            # build all packages (skip already-current .debs)
+#   bash scripts/build-all.sh foundry-welcome   # build one package by name
 #
 # Two layouts supported:
 #
@@ -21,7 +25,9 @@ cd "$(dirname "$0")/.."
 
 REPO_ROOT="$(pwd)"
 mkdir -p dist
-rm -f dist/*.deb
+
+# Optional single-package filter (first positional arg).
+PKG_FILTER="${1:-}"
 
 build_canonical() {
     local pkgdir="$1" name="$2"
@@ -36,6 +42,14 @@ build_canonical() {
     if [[ -z "$ver" ]]; then
         echo "FAIL $name (could not parse version from debian/changelog)" >&2
         return 1
+    fi
+
+    # Skip if a .deb for this exact version already exists in dist/.
+    local existing
+    existing=$(ls "${REPO_ROOT}/dist/${name}_${ver}_"*.deb 2>/dev/null | head -1 || true)
+    if [[ -n "$existing" ]]; then
+        echo "SKIP $name (dist/$(basename "$existing") already current)"
+        return 0
     fi
 
     builddir=$(mktemp -d -t "${name}-build-XXXXXX")
@@ -64,8 +78,24 @@ fail=0
 for pkgdir in packages/*/; do
     name=$(basename "$pkgdir")
 
+    # Single-package filter.
+    if [[ -n "$PKG_FILTER" && "$name" != "$PKG_FILTER" ]]; then
+        continue
+    fi
+
     if [[ -x "$pkgdir/build.sh" ]]; then
-        echo "=== Running $name/build.sh (legacy build.sh wrapper) ==="
+        # Skip if the current changelog version is already in dist/.
+        if [[ -f "$pkgdir/debian/changelog" ]]; then
+            _ver=$(dpkg-parsechangelog -l "$pkgdir/debian/changelog" -SVersion 2>/dev/null || true)
+            if [[ -n "$_ver" ]]; then
+                _existing=$(ls "${REPO_ROOT}/dist/${name}_${_ver}_"*.deb 2>/dev/null | head -1 || true)
+                if [[ -n "$_existing" ]]; then
+                    echo "SKIP $name (dist/$(basename "$_existing") already current)"
+                    continue
+                fi
+            fi
+        fi
+        echo "=== Running $name/build.sh ==="
         if ! bash "$pkgdir/build.sh"; then
             echo "FAIL $name (build.sh exited non-zero)" >&2
             fail=1
@@ -92,3 +122,13 @@ fi
 echo
 echo "=== dist/ ==="
 ls -lh dist/
+
+# When running as root inside a Docker container, bind-mounted files land as
+# root on the host. Re-own dist/*.deb to match the directory's host owner so
+# the caller doesn't end up with root-owned artifacts.
+if [[ $EUID -eq 0 ]]; then
+    volume_owner=$(stat -c '%u:%g' .)
+    if [[ "$volume_owner" != "0:0" ]]; then
+        chown "$volume_owner" dist/*.deb 2>/dev/null || true
+    fi
+fi
