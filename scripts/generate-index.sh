@@ -44,7 +44,10 @@ def fmt_desc(text):
     escaped = esc(text)
     return re.sub(r'`([^`]+)`', lambda m: f'<code>{m.group(1)}</code>', escaped)
 
-for fname in sorted(os.listdir(meta_dir)):
+icon_3  = '<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M8 1.5 L1 8.5 L3 8.5 L3 14.5 L7 14.5 L7 10.5 L9 10.5 L9 14.5 L13 14.5 L13 8.5 L15 8.5 Z"/></svg>'
+icon_10 = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2 L14 8 L12 8 L12 14 L4 14 L4 8 L2 8 Z"/></svg>'
+
+for i, fname in enumerate(sorted(os.listdir(meta_dir))):
     if not fname.endswith(".json"):
         continue
     with open(os.path.join(meta_dir, fname)) as f:
@@ -63,8 +66,8 @@ for fname in sorted(os.listdir(meta_dir)):
     section    = p.get("section", "")
     meta_badge = '<span class="pkg-meta">meta</span> ' if section == "metapackages" else ''
     name_cell = f'<b class="pkg-name">{esc(name)}</b>'
-    # Home button goes at the start of description cell
-    home_svg = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8 L8 2 L14 8"/><path d="M4 8 L4 14 L12 14 L12 8"/><path d="M6 14 L6 10 L10 10 L10 14"/></svg>'
+    # Home button goes at the start of description cell — alternate icons for preview
+    home_svg = icon_3 if i % 2 == 0 else icon_10
     home_btn = f'<a class="pkg-home" href="{esc(hp)}" title="{esc(hp)}" aria-label="Homepage">{home_svg}</a> ' if hp else ''
 
     # Version cell with .deb download link(s)
@@ -93,7 +96,17 @@ for fname in sorted(os.listdir(meta_dir)):
     if desc_long or depends or inst_kb is not None:
         parts = []
         if desc_long:
-            parts.append(f'<p class="pkg-long">{fmt_desc(desc_long)}</p>')
+            for para in re.split(r'\n\n+', desc_long.strip()):
+                lines = [line.strip() for line in para.splitlines() if line.strip()]
+                if not lines:
+                    continue
+                if all(l.startswith('* ') for l in lines):
+                    items = ''.join(
+                        f'<li>{fmt_desc(re.sub(r"  +", " ", l[2:]))}</li>' for l in lines
+                    )
+                    parts.append(f'<ul class="pkg-long">{items}</ul>')
+                else:
+                    parts.append(f'<p class="pkg-long">{fmt_desc(" ".join(lines))}</p>')
         if depends:
             chips = "".join(f'<span class="dep">{esc(d)}</span>' for d in depends)
             parts.append(f'<div class="pkg-deps">{chips}</div>')
@@ -139,10 +152,11 @@ cat > "$OUT" <<HTML
 <style>
   /* apt-index layout — colour/font variables from foundrylinux.org/styles.css */
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scrollbar-gutter: stable; }
   body { background: var(--bg); color: var(--ink); }
   a { color: var(--accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
-  .wrap { max-width: 860px; margin: 0 auto; padding: 2rem 1rem; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 2rem 1rem; }
   h1 {
     font-family: var(--font-mono);
     font-size: 11px;
@@ -228,6 +242,7 @@ cat > "$OUT" <<HTML
   }
   .table-wrap { border: 1px solid var(--hairline); }
   table { width: 100%; border-collapse: collapse; }
+  td.col-pkg, th:first-child { width: 1%; }
   th {
     font-family: var(--font-mono);
     font-size: 10px;
@@ -269,6 +284,8 @@ cat > "$OUT" <<HTML
     font-family: var(--font-mono); letter-spacing: .05em;
     list-style: none; display: inline;
   }
+  .pkg-details summary::before { transition: color 0.15s; }
+  .pkg-details summary:hover::before { color: var(--accent); }
   .pkg-details summary::marker,
   .pkg-details summary::-webkit-details-marker { display: none; }
   .pkg-details summary::before { content: "▸ "; }
@@ -276,8 +293,9 @@ cat > "$OUT" <<HTML
   .pkg-details[open] summary { color: var(--ink-soft); }
   .pkg-long {
     margin-top: .5rem; font-size: 11px; line-height: 1.55;
-    color: var(--ink-soft); white-space: pre-wrap; word-break: break-word;
+    color: var(--ink-soft); word-break: break-word;
   }
+  ul.pkg-long { padding-left: 1.2em; }
   .pkg-long code {
     font-family: var(--font-mono); font-size: 10.5px;
     background: rgba(255,255,255,0.07); padding: .1em .3em;
