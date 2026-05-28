@@ -11,115 +11,106 @@ SITE_URL="https://apt.foundrylinux.org"
 GITHUB_URL="https://github.com/foundry-linux/foundry-apt"
 PUBLISHED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-# Parse each packages/<name>/debian/ into parallel arrays (bash 3 compat).
-#
-# Canonical layout only: packages/<name>/debian/{control,changelog}
-# (Debian source-package format). Homepage is in the Source: stanza;
-# version comes from the first changelog entry; one row per Package:
-# stanza. Packages without a debian/ tree (e.g. legacy xa65 with
-# DEBIAN/control only) still build via packages/<name>/build.sh but
-# do not appear on this landing page.
-PKG_NAMES=()
-PKG_VERSIONS=()
-PKG_DESCS=()
-PKG_HOMEPAGES=()
-PKG_ARCHS=()
-
-# Source-format parser: emits one TSV line per binary stanza:
-#   pkg<TAB>arch<TAB>desc_short
-# Skips the Source: stanza (the first one). Field continuations (lines
-# starting with space) on Description are ignored — we only emit the
-# short summary line.
-parse_source_control_binaries() {
-  awk -v RS='' -v ORS='\n' '
-    NR == 1 { next }     # First stanza is "Source:" — skip
-    {
-      pkg=""; arch=""; desc=""
-      n = split($0, lines, "\n")
-      for (i = 1; i <= n; i++) {
-        if      (lines[i] ~ /^Package:/)      { sub(/^Package: */,      "", lines[i]); pkg  = lines[i] }
-        else if (lines[i] ~ /^Architecture:/) { sub(/^Architecture: */, "", lines[i]); arch = lines[i] }
-        else if (lines[i] ~ /^Description:/)  { sub(/^Description: */,  "", lines[i]); desc = lines[i] }
-      }
-      if (pkg != "") print pkg "\t" arch "\t" desc
-    }
-  ' "$1"
-}
-
+# Ensure meta files exist for all packages (fallback for local preview
+# without a prior 'task generate-meta' run).
+mkdir -p "$OUT_DIR/meta"
 for pkgdir in "$REPO_ROOT"/packages/*/; do
-  [[ -d "$pkgdir" ]] || continue
-  src_control="${pkgdir}debian/control"
-  src_changelog="${pkgdir}debian/changelog"
-
-  [[ -f "$src_control" && -f "$src_changelog" ]] || continue
-
-  homepage=$(awk '/^Homepage:/ {sub(/^Homepage: */,""); print; exit}' "$src_control" || true)
-  # dpkg-parsechangelog is the canonical way to read debian/changelog
-  # (works with mawk; gawk's match(..., a) does not).
-  if command -v dpkg-parsechangelog >/dev/null; then
-    ver=$(dpkg-parsechangelog -l "$src_changelog" -SVersion)
-  else
-    # Fallback for environments without dpkg-dev installed (e.g. local preview)
-    ver=$(sed -n '1s/^[^(]*(\([^)]*\)).*/\1/p' "$src_changelog")
+  name="$(basename "$pkgdir")"
+  [[ -f "$pkgdir/debian/control" && -f "$pkgdir/debian/changelog" ]] || continue
+  if [[ ! -f "$OUT_DIR/meta/${name}.json" ]]; then
+    bash "$SCRIPT_DIR/generate-meta.sh" "$name"
   fi
-  if [[ -z "$ver" ]]; then
-    echo "WARNING: $src_changelog missing version on line 1 — skipping $pkgdir" >&2
-    continue
-  fi
-  while IFS=$'\t' read -r pkg arch desc; do
-    [[ -n "$pkg" ]] || continue
-    PKG_NAMES+=("$pkg")
-    PKG_VERSIONS+=("$ver")
-    PKG_DESCS+=("$desc")
-    PKG_HOMEPAGES+=("${homepage:-}")
-    PKG_ARCHS+=("${arch:-all}")
-  done < <(parse_source_control_binaries "$src_control")
 done
 
-# Build the package table rows
-PKG_ROWS=""
-for i in "${!PKG_NAMES[@]}"; do
-  name="${PKG_NAMES[$i]}"
-  ver="${PKG_VERSIONS[$i]}"
-  desc="${PKG_DESCS[$i]}"
-  hp="${PKG_HOMEPAGES[$i]}"
-  arch="${PKG_ARCHS[$i]}"
-  if [[ -n "$hp" ]]; then
-    name_cell="<a href=\"${hp}\">${name}</a>"
-  else
-    name_cell="$name"
-  fi
-  L="${name:0:1}"
-  if [[ "$arch" == "all" ]]; then
-    deb_url="/pool/main/${L}/${name}/${name}_${ver}_all.deb"
-    ver_cell="<a href=\"${deb_url}\">${ver}</a>"
-  else
-    # Architecture: "any" means "build per host arch" — Debian's wildcard.
-    # The actual .debs in dist/ have concrete arch suffixes (amd64, arm64, …),
-    # so resolve "any" by looking at what's actually been built. Multi-token
-    # lists like "amd64 arm64" pass through verbatim.
-    if [[ "$arch" == "any" ]]; then
-      built=""
-      for f in "${REPO_ROOT}/dist/${name}_${ver}_"*.deb; do
-        [[ -f "$f" ]] || continue
-        a=$(basename "$f" .deb | sed "s/^${name}_${ver}_//")
-        built="${built}${built:+ }${a}"
-      done
-      arch="${built:-amd64}"  # fallback if dist/ is empty (e.g. local preview)
-    fi
-    arch_links=""
-    for a in $arch; do
-      [[ -n "$arch_links" ]] && arch_links="${arch_links} "
-      arch_links="${arch_links}<a href=\"/pool/main/${L}/${name}/${name}_${ver}_${a}.deb\">${a}</a>"
-    done
-    ver_cell="${ver} (${arch_links})"
-  fi
-  PKG_ROWS="${PKG_ROWS}
-      <tr><td class="col-name">${name_cell}</td><td class="col-ver">${ver_cell}</td><td class="col-desc">${desc}</td></tr>"
-done
+# Read all public/meta/*.json → emit one <tr> per package (alphabetical).
+# Python handles HTML escaping, arch resolution, and the <details> block.
+PKG_ROWS=$(python3 - "$REPO_ROOT" "$OUT_DIR" <<'PYEOF'
+import glob, html, json, os, sys
 
-# Copy tracked static assets (favicon, etc.) into the publish dir so rclone
-# picks them up. Anything under gen/static/ ships to the repo root.
+repo_root, out_dir = sys.argv[1], sys.argv[2]
+meta_dir = os.path.join(out_dir, "meta")
+dist_dir = os.path.join(repo_root, "dist")
+
+def esc(s):
+    return html.escape(str(s or ""), quote=True)
+
+def size_human(kb):
+    if kb is None:
+        return None
+    return f"~{round(kb / 1024)} MB" if kb >= 1024 else f"~{kb} KB"
+
+for fname in sorted(os.listdir(meta_dir)):
+    if not fname.endswith(".json"):
+        continue
+    with open(os.path.join(meta_dir, fname)) as f:
+        p = json.load(f)
+
+    name       = p["name"]
+    ver        = p["version"]
+    arch       = p["architecture"]
+    hp         = p.get("homepage", "")
+    desc_short = p.get("description_short", "")
+    desc_long  = (p.get("description_long") or "").strip()
+    depends    = p.get("depends") or []
+    inst_kb    = p.get("installed_size_kb")
+
+    # Name cell
+    name_cell = f'<a href="{esc(hp)}">{esc(name)}</a>' if hp else esc(name)
+
+    # Version cell with .deb download link(s)
+    letter = name[0]
+    if arch == "all":
+        deb_url  = f"/pool/main/{letter}/{name}/{name}_{ver}_all.deb"
+        ver_cell = f'<a href="{deb_url}">{esc(ver)}</a>'
+    else:
+        if arch == "any":
+            built = [
+                os.path.basename(f)[len(f"{name}_{ver}_"):-4]
+                for f in sorted(glob.glob(
+                    os.path.join(dist_dir, f"{name}_{ver}_*.deb")
+                ))
+            ]
+            arches = built if built else ["amd64"]
+        else:
+            arches = arch.split()
+        links = " ".join(
+            f'<a href="/pool/main/{letter}/{name}/{name}_{ver}_{a}.deb">{a}</a>'
+            for a in arches
+        )
+        ver_cell = f"{esc(ver)} ({links})"
+
+    # Description cell with optional <details> for long desc + dep chips
+    if desc_long or depends or inst_kb is not None:
+        parts = []
+        if desc_long:
+            parts.append(f'<pre class="pkg-long">{esc(desc_long)}</pre>')
+        if depends:
+            chips = "".join(f'<span class="dep">{esc(d)}</span>' for d in depends)
+            parts.append(f'<div class="pkg-deps">{chips}</div>')
+        if inst_kb is not None:
+            parts.append(f'<p class="pkg-size">{esc(size_human(inst_kb))} installed</p>')
+        details = (
+            '<details class="pkg-details"><summary>details</summary>'
+            + "".join(parts)
+            + "</details>"
+        )
+        desc_cell = f"{esc(desc_short)} {details}"
+    else:
+        desc_cell = esc(desc_short)
+
+    print(
+        f'<tr data-name="{esc(name)}" data-ver="{esc(ver)}" data-desc="{esc(desc_short)}">'
+        f'<td class="col-name">{name_cell}</td>'
+        f'<td class="col-ver">{ver_cell}</td>'
+        f'<td class="col-desc">{desc_cell}</td>'
+        f'</tr>'
+    )
+PYEOF
+)
+
+PKG_COUNT=$(grep -c '^<tr' <<< "$PKG_ROWS" || true)
+
+# Copy tracked static assets (favicon, index.js) into the publish dir.
 if [[ -d "$REPO_ROOT/gen/static" ]]; then
   cp -a "$REPO_ROOT/gen/static/." "$OUT_DIR/"
 fi
@@ -169,6 +160,16 @@ cat > "$OUT" <<HTML
     letter-spacing: 0.2em;
     margin: 2.5rem 0 .75rem;
   }
+  .pre-wrap { position: relative; }
+  .pre-wrap .copy {
+    position: absolute; top: .5rem; right: .5rem;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em;
+    text-transform: uppercase; padding: .2rem .5rem;
+    background: rgba(255,255,255,0.06); border: 1px solid var(--hairline-strong);
+    color: var(--ink-faint); cursor: pointer; border-radius: 2px;
+  }
+  .pre-wrap .copy:hover { color: var(--ink); border-color: var(--accent); }
+  .pre-wrap .copy[data-copied] { color: var(--accent); }
   pre {
     background: rgba(255,255,255,0.015);
     border: 1px solid var(--hairline-strong);
@@ -178,6 +179,33 @@ cat > "$OUT" <<HTML
     font-size: 13px;
     line-height: 1.7;
     color: var(--ink);
+  }
+  .filter-bar {
+    display: flex; align-items: center; gap: .5rem;
+    margin-bottom: .5rem;
+  }
+  .filter-bar label {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: .2em; text-transform: uppercase; color: var(--ink-faint);
+    white-space: nowrap;
+  }
+  #filter-q {
+    flex: 1; background: rgba(255,255,255,0.04);
+    border: 1px solid var(--hairline-strong); color: var(--ink);
+    font-family: var(--font-mono); font-size: 12px;
+    padding: .3rem .6rem; outline: none;
+  }
+  #filter-q:focus { border-color: var(--accent); }
+  .filter-clear {
+    background: none; border: none; color: var(--ink-faint);
+    font-size: 14px; cursor: pointer; padding: 0 .25rem; line-height: 1;
+  }
+  .filter-clear:hover { color: var(--ink); }
+  .listing-bar {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: .15em;
+    text-transform: uppercase; color: var(--ink-faint);
+    margin-bottom: .25rem;
   }
   .table-wrap { border: 1px solid var(--hairline); }
   table { width: 100%; border-collapse: collapse; }
@@ -190,10 +218,43 @@ cat > "$OUT" <<HTML
     padding: .5rem .75rem;
     text-align: left;
     border-bottom: 1px solid var(--hairline-strong);
+    user-select: none;
   }
+  th[data-sort]:hover { color: var(--ink); }
+  .sort-ind { margin-left: .3em; font-size: 9px; }
   td { padding: .5rem .75rem; border-top: 1px solid var(--hairline); font-size: 14px; }
   td.col-name { white-space: nowrap; font-family: var(--font-mono); font-size: 13px; }
   td.col-ver { color: var(--ink-soft); white-space: nowrap; font-family: var(--font-mono); font-size: 12px; }
+  /* ── Package details (long desc + dep chips) ── */
+  .pkg-details { margin-top: .3rem; }
+  .pkg-details summary {
+    cursor: pointer; font-size: 11px; color: var(--ink-faint);
+    font-family: var(--font-mono); letter-spacing: .05em;
+    list-style: none; display: inline;
+  }
+  .pkg-details summary::marker,
+  .pkg-details summary::-webkit-details-marker { display: none; }
+  .pkg-details summary::before { content: "▸ "; }
+  .pkg-details[open] summary::before { content: "▾ "; }
+  .pkg-details[open] summary { color: var(--ink-soft); }
+  .pkg-long {
+    margin-top: .5rem; font-size: 11px; line-height: 1.55;
+    border: none; background: none; padding: 0;
+    color: var(--ink-soft); white-space: pre-wrap; word-break: break-word;
+  }
+  .pkg-deps {
+    display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .5rem;
+  }
+  .dep {
+    font-family: var(--font-mono); font-size: 10.5px;
+    border: 1px solid var(--hairline-strong);
+    padding: .1rem .4rem; color: var(--accent);
+    white-space: nowrap;
+  }
+  .pkg-size {
+    margin-top: .4rem; font-size: 11px; color: var(--ink-faint);
+    font-family: var(--font-mono);
+  }
   footer {
     margin-top: 3rem;
     color: var(--ink-faint);
@@ -205,12 +266,7 @@ cat > "$OUT" <<HTML
     padding-top: 1rem;
   }
 
-  /* ── Narrow screens: card layout ────────────────────────────────────
-     Five columns don't fit in 375 px without breaking. Convert each row
-     into a stacked card: package name (line 1), version (line 2, muted),
-     description (line 3, full width). Last-modified and hash aren't in
-     this table so nothing needs hiding — just the header row.
-  ──────────────────────────────────────────────────────────────────── */
+  /* ── Narrow screens: card layout ──────────────────────────────────── */
   @media (max-width: 639px) {
     .wrap { padding: 1.5rem 0.75rem; }
     .site-title { font-size: 1.75rem; }
@@ -239,22 +295,39 @@ cat > "$OUT" <<HTML
   <p class="subtitle">${SITE_URL} &mdash; signed packages for Ubuntu 26.04 (resolute)</p>
 
   <h2>Quick install</h2>
-  <pre>curl -fsSL ${SITE_URL}/key.gpg \\
+  <div class="pre-wrap">
+  <button class="copy" type="button" data-copy="quick-install">Copy</button>
+  <pre id="quick-install">curl -fsSL ${SITE_URL}/key.gpg \\
   | gpg --dearmor -o /etc/apt/keyrings/foundry.gpg
 echo "deb [signed-by=/etc/apt/keyrings/foundry.gpg] ${SITE_URL} resolute main" \\
   | sudo tee /etc/apt/sources.list.d/foundry.list
 sudo apt-get update
 sudo apt-get install foundry-retro-tools</pre>
+  </div>
 
   <h2>GPG key</h2>
   <p><a href="/key.gpg">↓ key.gpg</a> &mdash; verify before trusting:
      <code>gpg --show-keys /etc/apt/keyrings/foundry.gpg</code></p>
 
   <h2>Packages</h2>
+  <div class="filter-bar">
+    <label for="filter-q">Filter</label>
+    <input id="filter-q" type="text" placeholder="name or description" autocomplete="off" spellcheck="false">
+    <button class="filter-clear" type="button" aria-label="Clear filter" hidden>×</button>
+  </div>
+  <div class="listing-bar">
+    <span>Packages</span>
+    <span data-count><b>${PKG_COUNT}</b> packages</span>
+  </div>
   <div class="table-wrap">
-  <table>
-    <thead><tr><th>Package</th><th>Version</th><th>Description</th></tr></thead>
-    <tbody>${PKG_ROWS}
+  <table class="listing-table">
+    <thead><tr>
+      <th data-sort="name">Package <span class="sort-ind"></span></th>
+      <th data-sort="ver">Version <span class="sort-ind"></span></th>
+      <th data-sort="desc">Description <span class="sort-ind"></span></th>
+    </tr></thead>
+    <tbody>
+${PKG_ROWS}
     </tbody>
   </table>
   </div>
@@ -264,6 +337,7 @@ sudo apt-get install foundry-retro-tools</pre>
 
   <footer>Published ${PUBLISHED}</footer>
 </div>
+<script src="/index.js" defer></script>
 </body>
 </html>
 HTML

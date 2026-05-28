@@ -1,3 +1,42 @@
+foundry-welcome (1.0.5) resolute; urgency=medium
+
+  * Revert to the sentinel-file approach for run-once-on-first-login. The 1.0.4
+    X-KDE-autostart-condition (foundry-welcome:General:FirstRunDone:false) never
+    launched the app on first login: KDE / kde-systemd-start-condition starts an
+    autostart entry only when the key evaluates to *true* — the 4th field is
+    merely the default for an absent key, not the trigger value. Seeding
+    FirstRunDone=false therefore guaranteed the app never started.
+    - main.cpp: restore the ~/.config/foundry-welcome-shown sentinel early-exit
+      and write it on close; drop the QSettings FirstRunDone write.
+    - autostart.desktop: remove X-KDE-autostart-condition. The .desktop fires
+      every login; the in-app sentinel makes it a no-op after first run.
+    - 1100-live-autologin.hook.chroot: drop the /etc/skel FirstRunDone seed.
+
+ -- Will Norris <wbnorris@gmail.com>  Tue, 26 May 2026 00:00:00 +0700
+
+foundry-welcome (1.0.4) resolute; urgency=medium
+
+  * Use X-KDE-autostart-condition properly: write FirstRunDone=true to
+    ~/.config/foundry-welcome (KConfig/IniFormat) on exit so the condition
+    skips the binary entirely on subsequent logins. Pre-seed the file with
+    FirstRunDone=false in /etc/skel/.config/foundry-welcome so kreadconfig6
+    returns "false" (not "") on first boot and the condition passes.
+    Remove the old sentinel-file approach (foundry-welcome-shown).
+
+ -- Will Norris <wbnorris@gmail.com>  Mon, 26 May 2026 00:00:00 +0700
+
+foundry-welcome (1.0.3) resolute; urgency=medium
+
+  * Remove X-KDE-autostart-condition from autostart.desktop. The condition
+    checked kreadconfig6 for FirstRunDone=false in ~/.config/foundry-welcome,
+    but the app uses a separate sentinel file (~/.config/foundry-welcome-shown).
+    On first boot the config key is absent so kreadconfig6 returns "" not
+    "false" — the condition always fails and the welcome screen never appears.
+    The app's own sentinel logic already prevents re-showing; the condition is
+    redundant and broken.
+
+ -- Will Norris <wbnorris@gmail.com>  Mon, 26 May 2026 00:00:00 +0700
+
 foundry-welcome (1.0.2) resolute; urgency=medium
 
   * Add src/qml/pages/qmldir so Qt6 can resolve CommunityPage, IntroPage,
