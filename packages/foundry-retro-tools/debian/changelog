@@ -1,3 +1,25 @@
+foundry-retro-tools (1.0.9) resolute; urgency=medium
+
+  * Add tilemap-studio (Game Boy / GBC / GBA / NES / SNES tilemap editor) — a
+    maintained modern successor to tUME, complementing m8te's SNES focus.
+
+ -- Foundry Linux <packages@foundrylinux.org>  Wed, 10 Jun 2026 15:30:00 +0700
+
+foundry-retro-tools (1.0.8) resolute; urgency=medium
+
+  * Add m8te (SNES 8bpp tile/tilemap/palette editor). Broaden the package
+    scope from arcade RE/porting to also cover retro-console asset authoring.
+
+ -- Foundry Linux <packages@foundrylinux.org>  Wed, 10 Jun 2026 14:05:52 +0700
+
+foundry-retro-tools (1.0.7) resolute; urgency=medium
+
+  * Drop ghidra (and its java-common Suggests) from Depends. Ghidra (~860 MiB
+    of near-incompressible jars) moves to the atelier edition so core/anvil
+    fit a 4 GB USB stick. See docs/plans/2026-06-04-usb-sized-iso-editions.md.
+
+ -- Foundry Linux <packages@foundrylinux.org>  Thu, 04 Jun 2026 03:08:06 +0000
+
 foundry-retro-tools (1.0.6) resolute; urgency=medium
 
   * Rename from foundry-linux-retro-tools.

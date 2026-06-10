@@ -17,7 +17,10 @@ Depends: ${misc:Depends},
  foundry-free-games,
  foundry-android-development,
  foundry-ios-development,
- worldfoundry-development
+ worldfoundry-development,
+ ghidra,
+ foundry-cv,
+ openjdk-21-jre-headless
 Description: Foundry Linux complete edition — everything
  foundry-sprite plus every optional Foundry metapackage and cross-repo
  development tooling — the "give me the lot" install, around 10 GB on
@@ -31,6 +34,13 @@ Description: Foundry Linux complete edition — everything
    * foundry-android-development          OpenJDK 17, adb, NDK r26c
    * foundry-ios-development              libimobiledevice, codemagic-cli-tools
    * worldfoundry-development             cross-repo engine build deps
+   * ghidra                               NSA SRE framework (~860 MiB; moved
+                                          here from retro-tools so anvil fits a
+                                          4 GB USB stick)
+   * foundry-cv                           OpenCV + libvtk9.5 + tesseract-ocr +
+                                          libvips-tools + gstreamer1.0-opencv
+   * openjdk-21-jre-headless              Java 21 LTS runtime (current LTS;
+                                          JRE 17 already in foundry-core)
  .
  Requires multiverse for the vintage emulators and game
  reimplementations. The bootstrap setup.sh handles this.

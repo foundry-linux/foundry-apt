@@ -1,3 +1,225 @@
+calamares-settings-foundry-linux (1.0.30) resolute; urgency=medium
+
+  * SECURITY: revert setRootPassword: false. It preserved the squashfs
+    root:foundry debug password onto every installed system — an inexcusable
+    backdoor that must never ship. Root is now managed normally by Calamares
+    (admin-password UI restored; root set/locked per the user's choice).
+    users.conf keeps only defaultGroups (the fallback-groups fix).
+
+ -- Will Norris <wbnorris@gmail.com>  Wed, 10 Jun 2026 13:40:00 +0700
+
+calamares-settings-foundry-linux (1.0.29) resolute; urgency=medium
+
+  * Add modules/users.conf with setRootPassword: false so Calamares leaves the
+    root account alone — preserving the squashfs root:foundry (live-ssh debug
+    hook) into the installed system, restoring `ssh root@target` debug access.
+    Also sets defaultGroups (silences the "fallback groups" build warning).
+    DEBUG ONLY — gate with the live-ssh hook before public release.
+    [REVERTED in 1.0.30 — backdoor.]
+
+ -- Will Norris <wbnorris@gmail.com>  Wed, 10 Jun 2026 13:10:00 +0700
+
+calamares-settings-foundry-linux (1.0.28) resolute; urgency=medium
+
+  * Welcome banner: swap in the native-rendered 1600x400 export (69 KB) — no
+    longer a downscale of the 4800x1200 master, so the chrome gradient is clean
+    (no resample banding/aliasing). Same metallic wordmark, 4:1.
+
+ -- Will Norris <wbnorris@gmail.com>  Wed, 10 Jun 2026 12:55:00 +0700
+
+calamares-settings-foundry-linux (1.0.27) resolute; urgency=medium
+
+  * Welcome banner: downscale the metallic wordmark to 1600x400 (51 KB) — 2x the
+    original 800x200 footprint, crisp on HiDPI without the 2400x600/4800x1200
+    over-resolution. 4:1 aspect, same wordmark.
+
+ -- Will Norris <wbnorris@gmail.com>  Wed, 10 Jun 2026 12:50:00 +0700
+
+calamares-settings-foundry-linux (1.0.26) resolute; urgency=medium
+
+  * Welcome banner: use the 4:1-fitted wordmark (2400x600) so it matches the
+    banner slot's aspect (the 2100x450 in 1.0.25 was 4.67:1 and sat oddly).
+
+ -- Will Norris <wbnorris@gmail.com>  Wed, 10 Jun 2026 12:40:00 +0700
+
+calamares-settings-foundry-linux (1.0.25) resolute; urgency=medium
+
+  * Replace the installer welcome banner (branding/foundry-linux/banner.png) with
+    the metallic "FOUNDRY [anvil] LINUX" horizontal wordmark (2100x450) — the
+    anvil set between the two words. Drops the old flat-text + "26.04 LTS · ANVIL"
+    subtitle banner.
+
+ -- Will Norris <wbnorris@gmail.com>  Wed, 10 Jun 2026 12:35:00 +0700
+
+calamares-settings-foundry-linux (1.0.24) resolute; urgency=medium
+
+  * Hide the swap chooser in the partition page and force no-swap.
+    userSwapChoices was [] (empty) which Calamares treats as "unconfigured" and
+    backfills with its built-in choices (none + suspend) — so a swap dropdown
+    appeared despite the intent. A single-entry list (- none) leaves nothing to
+    choose, so Calamares hides the combo box. initialSwapChoice stays "none".
+
+ -- Will Norris <wbnorris@gmail.com>  Wed, 10 Jun 2026 10:45:00 +0700
+
+calamares-settings-foundry-linux (1.0.23) resolute; urgency=medium
+
+  * Stop shipping the foundry-linux SDDM theme (Main.qml + background.png +
+    metadata.desktop) — moved to foundry-kde-theme. This package `Depends:
+    calamares` and is purged from the installed target, so shipping the login
+    theme here meant it disappeared on install and SDDM fell back to the Kubuntu
+    cones greeter. foundry-kde-theme survives the install and now owns it.
+
+ -- Will Norris <wbnorris@gmail.com>  Wed, 10 Jun 2026 10:12:00 +0700
+
+calamares-settings-foundry-linux (1.0.22) resolute; urgency=medium
+
+  * Fix slideshow text clipping (take 6 — ACTUAL root cause). The clipped text
+    was never in the QML caption that takes 1–5 kept editing: it is baked into
+    the 800x440 slide PNGs. fillMode was Image.PreserveAspectCrop, which scaled
+    each slide to FILL the taller installer pane and cropped ~77 px off each
+    side — clipping the first glyph of every heading ("Where"->"Vhere"). Switch
+    to Image.PreserveAspectFit (whole slide shown, dark backdrop hides the
+    letterbox) and remove the now-redundant QML caption (the PNG already carries
+    the heading + body). Takes 1–5 were fixing the wrong element entirely.
+
+ -- Will Norris <wbnorris@gmail.com>  Tue, 09 Jun 2026 23:30:00 +0700
+
+calamares-settings-foundry-linux (1.0.20) resolute; urgency=medium
+
+  * Fix slideshow text clipping (take 4): drop Item wrapper, use pure-anchor
+    properties on Column directly — anchors.left + leftMargin + anchors.right
+    + rightMargin + anchors.verticalCenter. All-anchor approach; no positional
+    properties mixed in; Column width is set implicitly by left+right anchors.
+
+ -- Will Norris <wbnorris@gmail.com>  Mon, 09 Jun 2026 08:00:00 +0700
+
+calamares-settings-foundry-linux (1.0.19) resolute; urgency=medium
+
+  * Fix Plymouth script: register Plymouth.SetMessageFunction so shutdown/
+    reboot messages ("remove the media and press enter to continue") are
+    rendered on screen. Without the callback Plymouth silently drops all
+    messages. Text is rendered in light grey centred at 82% screen height.
+
+ -- Will Norris <wbnorris@gmail.com>  Mon, 09 Jun 2026 05:30:00 +0700
+
+calamares-settings-foundry-linux (1.0.18) resolute; urgency=medium
+
+  * Fix slideshow text clipping (take 2): wrap the Column in an Item with
+    anchors.fill + leftMargin/rightMargin instead of setting x on the Column
+    directly. Qt Quick silently ignores x/width when anchors.verticalCenter
+    is also set on the same item (cannot mix positional and anchor properties).
+    Item wrapper gives the Column an unambiguously margin-adjusted parent width.
+
+ -- Will Norris <wbnorris@gmail.com>  Mon, 09 Jun 2026 05:00:00 +0700
+
+calamares-settings-foundry-linux (1.0.17) resolute; urgency=medium
+
+  * Fix slideshow text left-clipping: replace anchors.leftMargin/rightMargin
+    on Column with explicit x: 24; width: parent.width - 48. The anchor+margin
+    approach created a circular width dependency (children set width:
+    parent.width; Column implicit width grew from children) that Qt6 resolved
+    by ignoring the margin. Explicit x/width breaks the cycle cleanly.
+
+ -- Will Norris <wbnorris@gmail.com>  Mon, 09 Jun 2026 04:00:00 +0700
+
+calamares-settings-foundry-linux (1.0.16) resolute; urgency=medium
+
+  * Add shellprocess.conf: remove installer-only desktop artifacts from
+    the target before the users module creates the new user from skel.
+    Cleans /usr/share/applications/install-foundry-linux.desktop,
+    /etc/skel/Desktop/install-foundry-linux.desktop, and the launch/
+    autoinstall helper scripts so the installer icon never appears on
+    the installed system's desktop.
+  * Add shellprocess step to settings.conf exec sequence (before users).
+
+ -- Will Norris <wbnorris@gmail.com>  Mon, 09 Jun 2026 00:45:00 +0700
+
+calamares-settings-foundry-linux (1.0.15) resolute; urgency=medium
+
+  * Fix mount.conf: options must be YAML arrays (["bind"] not "bind") —
+    Calamares mount module schema validation rejects scalar options, causing
+    the entire extraMounts block to be silently skipped and grub-install to
+    fail with error code 1 (no block devices in target /dev).
+  * Fix mount.conf: remove extraMountsEfi (not a valid schema key in
+    Calamares 3.3 mount module) — merge efivarfs entry into extraMounts
+    with efi: true per the actual module schema.
+
+ -- Will Norris <wbnorris@gmail.com>  Sun, 08 Jun 2026 23:15:00 +0700
+
+calamares-settings-foundry-linux (1.0.14) resolute; urgency=medium
+
+  * Add mount.conf: bind-mount /dev, /dev/pts, /proc, /sys, /run, and
+    /sys/firmware/efi/efivars (EFI only) into the target chroot via
+    extraMounts/extraMountsEfi. Without this Calamares runs grub-install in a
+    chroot with no block devices in /dev, causing "cannot find a device for
+    /boot/efi" and aborting the bootloader step.
+  * Fix packages.conf: set skip_if_no_internet=false so the live-package
+    removal (calamares, live-boot, etc.) always runs even when Calamares
+    hasInternet detection is inconclusive.
+
+ -- Will Norris <wbnorris@gmail.com>  Sun, 08 Jun 2026 10:00:00 +0700
+
+calamares-settings-foundry-linux (1.0.13) resolute; urgency=medium
+
+  * Fix partition.conf: Calamares 3.3 PartitionLayout::init() requires both
+    "name" and "size" as mandatory keys per entry — without "name" it silently
+    switches to a default layout that creates no root partition, so unsquashfs
+    extracts to the live tmpfs and fails with exit 1. Add efi: block so
+    Calamares sizes the EFI partition correctly (300 MiB).
+  * Add bootloader.conf: set efiBootLoader=grub so Calamares runs grub-install
+    after filesystem copy. Without this the bootloader module skips entirely
+    and the installed system has no bootloader.
+  * Fix settings.conf: move packages before bootloader so grub-efi-amd64 is
+    present in the target before grub-install runs.
+  * Fix slideshow clipping: increase windowSize 800px→1100px; replace fixed
+    800×440 root Item dimensions with anchors.fill: parent.
+
+ -- Will Norris <wbnorris@gmail.com>  Fri, 06 Jun 2026 13:30:00 +0700
+
+calamares-settings-foundry-linux (1.0.12) resolute; urgency=medium
+
+  * Add partition.conf: set defaultFileSystemType=ext4 and initialSwapChoice=none.
+    Without defaultFileSystemType, Calamares leaves root fs type as "unknown" and
+    auto-partitioner creates only EFI + swap with no root partition, causing
+    unsquashfs to fail (exit 1, no output) at the "Unpack filesystems" step.
+
+ -- Will Norris <wbnorris@gmail.com>  Fri, 06 Jun 2026 00:00:00 +0700
+
+calamares-settings-foundry-linux (1.0.11) resolute; urgency=medium
+
+  * Fix unpackfsc.conf: remove unpack: list wrapper — CppJobModule calls
+    setConfigurationMap() once with the full config map; getString(map, "source")
+    returns empty when source is nested under unpack:, logging "Skipping item with
+    bad source data" and returning ok() without extracting. Flat format only:
+    source/sourcefs/destination at top level.
+
+ -- Will Norris <wbnorris@gmail.com>  Thu, 05 Jun 2026 00:00:00 +0700
+
+calamares-settings-foundry-linux (1.0.10) resolute; urgency=medium
+
+  * Fix unpackfsc.conf: change destination from "" to "/" — empty destination
+    triggers "Skipping item with empty destination" in UnpackFSCJob::setConfigurationMap
+    (the job silently returns ok() without extracting). Calamares::System::targetPath("/")
+    resolves to rootMountPoint, so "/" is the correct value for "install root".
+
+ -- Will Norris <wbnorris@gmail.com>  Thu, 05 Jun 2026 00:00:00 +0700
+
+calamares-settings-foundry-linux (1.0.9) resolute; urgency=medium
+
+  * Switch Calamares unpack module from unpackfs (Python, rsync) to unpackfsc
+    (C++, unsquashfs) — eliminates rsync RERR_FILEIO (error 11) during
+    installation. unpackfsc uses UnsquashRunner directly instead of
+    mount + rsync, so xattr-related rsync failures cannot occur.
+  * Add unpackfsc.conf (mirrors unpackfs.conf config format).
+
+ -- Will Norris <wbnorris@gmail.com>  Thu, 05 Jun 2026 00:00:00 +0700
+
+calamares-settings-foundry-linux (1.0.8) resolute; urgency=medium
+
+  * (Unreleased local build — changelog not recorded.)
+
+ -- Will Norris <wbnorris@gmail.com>  Mon, 26 May 2026 00:00:00 +0700
+
 calamares-settings-foundry-linux (1.0.7) resolute; urgency=medium
 
   * Add missing Calamares module configs: unpackfs (squashfs source path),
