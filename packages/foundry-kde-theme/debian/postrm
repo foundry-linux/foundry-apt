@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+# Undo the divert-and-replace on final removal so Kubuntu's files are restored
+# cleanly (no orphaned diversions).
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+    rm -f /etc/xdg/kicker-extra-favoritesrc
+    dpkg-divert --remove --rename --package foundry-kde-theme \
+        --divert /etc/xdg/kicker-extra-favoritesrc.kubuntu \
+        /etc/xdg/kicker-extra-favoritesrc
+    rm -f /etc/skel/.face
+    dpkg-divert --remove --rename --package foundry-kde-theme \
+        --divert /etc/skel/.face.kubuntu \
+        /etc/skel/.face
+fi
+
+#DEBHELPER#
+exit 0

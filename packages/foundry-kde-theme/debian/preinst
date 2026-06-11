@@ -1,0 +1,22 @@
+#!/bin/sh
+set -e
+
+# foundry-kde-theme consolidates the desktop theming into one package. Kubuntu's
+# kubuntu-settings-desktop owns /etc/xdg/kicker-extra-favoritesrc (the app-menu
+# "Favorites" list — which is where Kate comes from). Divert it so our version
+# (Kate out, Blender in) can ship at the same path. --package scopes the diversion
+# to OTHER packages, so foundry-kde-theme's own file installs normally.
+if [ "$1" = "install" ] || [ "$1" = "upgrade" ]; then
+    dpkg-divert --add --rename --package foundry-kde-theme \
+        --divert /etc/xdg/kicker-extra-favoritesrc.kubuntu \
+        /etc/xdg/kicker-extra-favoritesrc
+    # Avatar: kubuntu-settings-desktop owns /etc/skel/.face (the blue gear).
+    # Divert it so we ship the Foundry anvil at the same path. The .face.icon
+    # symlink (kubuntu's, -> .face) then resolves to our avatar.
+    dpkg-divert --add --rename --package foundry-kde-theme \
+        --divert /etc/skel/.face.kubuntu \
+        /etc/skel/.face
+fi
+
+#DEBHELPER#
+exit 0
