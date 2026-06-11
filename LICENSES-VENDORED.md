@@ -4,6 +4,7 @@ Each `.deb` we repackage and redistribute via this repo keeps the upstream's lic
 
 | Package | Upstream | Licence | Where the text lives in the .deb |
 |---|---|---|---|
+| `drmon` | [developer-resources-co/drdevtools](https://github.com/developer-resources-co/drdevtools) | [GPL-2.0](https://github.com/developer-resources-co/drdevtools/blob/main/COPYING) | `/usr/share/doc/drmon/copyright` |
 | `f9dasm` | [Arakula/f9dasm](https://github.com/Arakula/f9dasm) | [GPL-2.0+](https://github.com/Arakula/f9dasm) | `/usr/share/doc/f9dasm/copyright` |
 | `ghidra` | [NSA / Ghidra](https://ghidra-sre.org/) | [Apache-2.0](https://github.com/NationalSecurityAgency/ghidra/blob/master/LICENSE) | `/usr/share/doc/ghidra/copyright` |
 | `libvgm` | [ValleyBell/libvgm](https://github.com/ValleyBell/libvgm) | [GPL-2.0+](https://github.com/ValleyBell/libvgm/blob/master/LICENSE) (bundles BSD-3-Clause / LGPL-2.1+ components) | `/usr/share/doc/libvgm/copyright` |
@@ -23,6 +24,7 @@ Each `.deb` we repackage and redistribute via this repo keeps the upstream's lic
 | `m8te` | [nesdoug/M8TE](https://github.com/nesdoug/M8TE) | [MIT](https://github.com/nesdoug/M8TE/blob/main/LICENSE) | `/usr/share/doc/m8te/copyright` |
 | `tilemap-studio` | [Rangi42/tilemap-studio](https://github.com/Rangi42/tilemap-studio) | [LGPL-3.0](https://github.com/Rangi42/tilemap-studio/blob/master/LICENSE) (statically links FLTK under [FLTK licence](https://www.fltk.org/doc-1.4/license.html)) | `/usr/share/doc/tilemap-studio/copyright` |
 | `wla-dx` | [vhelin/wla-dx](https://github.com/vhelin/wla-dx) | [GPL-2.0+](https://github.com/vhelin/wla-dx/blob/master/COPYING) | `/usr/share/doc/wla-dx/copyright` |
+| `pvsneslib` | [alekmaul/pvsneslib](https://github.com/alekmaul/pvsneslib) | [Zlib](https://github.com/alekmaul/pvsneslib/blob/master/LICENSE) (bundles a pinned [WLA DX](https://github.com/vhelin/wla-dx) under GPL-2.0+ in `devkitsnes/bin/`) | `/usr/share/doc/pvsneslib-core/copyright` |
 
 > ⚠️ **`snes9x-gtk` ships under the Snes9x licence, which forbids commercial redistribution.** The source may be freely distributed for non-commercial use; binaries are likewise non-commercial. It is fine for Foundry Linux's free, non-commercial apt repo, but it must never be bundled into a paid product. See the [upstream LICENSE](https://github.com/snes9xgit/snes9x/blob/master/LICENSE).
 
