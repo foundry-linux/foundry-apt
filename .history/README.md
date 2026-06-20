@@ -1,5 +1,6 @@
 | Date | Change |
 |------|--------|
+| [2026-06-20](https://github.com/foundry-linux/foundry-apt/commit/a2cce46) | chore: sync from foundrylinux.org 2026-06-20T12:55:42Z |
 | [2026-06-14](https://github.com/foundry-linux/foundry-apt/commit/b621693) | chore: sync from foundrylinux.org 2026-06-14T04:56:17Z |
 | [2026-06-10](https://github.com/foundry-linux/foundry-apt/commit/53e4d30) | chore: sync from foundrylinux.org 2026-06-10T08:09:11Z |
 | [2026-05-21](https://github.com/foundry-linux/foundry-apt/commit/a75aa3a) | chore: sync from foundrylinux.org 2026-05-21T08:56:33Z |
@@ -12,6 +13,10 @@
 | [2026-05-17](https://github.com/foundry-linux/foundry-apt/commit/a3e197a) | feat: initial foundry-apt import |
 
 <!--history-meta v1
+a2cce46	author	Will Norris
+a2cce46	added	1
+a2cce46	deleted	1
+a2cce46	files	1
 b621693	author	Will Norris
 b621693	added	1
 b621693	deleted	1
