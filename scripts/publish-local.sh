@@ -46,9 +46,14 @@ if [[ -n "$GPG_KEY" ]]; then
 fi
 # Map filesystem:public: to our local ./public/ via aptly.conf 'FileSystemPublishEndpoints'
 # For a CI build we instead write to a per-arch S3/R2 endpoint.
+# -origin/-label present cleanly in the published Release (instead of aptly's
+# ". <suite>" default) — see foundry-apt/scripts/check-publish-metadata.sh, which
+# enforces these exact values (a Claude PostToolUse hook runs it on edits here).
 aptly -config="$APTLY_CONFIG" publish repo \
     "${gpg_args[@]}" \
-    -architectures=amd64,arm64,all \
+    -origin="Foundry Linux" \
+    -label="Foundry Linux" \
+    -architectures=amd64,arm64,all,source \
     -distribution="$SUITE" \
     foundry filesystem:public:
 
