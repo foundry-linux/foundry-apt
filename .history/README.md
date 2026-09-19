@@ -1,5 +1,6 @@
 | Date | Change |
 |------|--------|
+| [2026-08-30](https://github.com/foundry-linux/foundry-apt/commit/590eebc) | chore: sync from foundrylinux.org 2026-08-30T21:24:29Z |
 | [2026-08-05](https://github.com/foundry-linux/foundry-apt/commit/7ff3c30) | chore: sync from foundrylinux.org 2026-08-06T02:53:19Z |
 | [2026-08-05](https://github.com/foundry-linux/foundry-apt/commit/ee68209) | chore: sync from foundrylinux.org 2026-08-05T17:03:56Z |
 | [2026-08-05](https://github.com/foundry-linux/foundry-apt/commit/756443c) | chore: sync from foundrylinux.org 2026-08-05T15:33:18Z |
@@ -17,6 +18,10 @@
 | [2026-05-17](https://github.com/foundry-linux/foundry-apt/commit/a3e197a) | feat: initial foundry-apt import |
 
 <!--history-meta v1
+590eebc	author	Will Norris
+590eebc	added	12
+590eebc	deleted	1
+590eebc	files	1
 7ff3c30	author	Will Norris
 7ff3c30	added	4
 7ff3c30	deleted	1
