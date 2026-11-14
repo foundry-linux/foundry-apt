@@ -192,17 +192,17 @@ Copyright: 2012, Alberto Villa <avilla@FreeBSD.org>
            2024, Xaver Hugl <xaver.hugl@gmail.com>
 License: LGPL-2.0-only
 
-Files: applets/batterymonitor/package/contents/ui/BatteryItem.qml
-       applets/batterymonitor/package/contents/ui/CompactRepresentation.qml
-       applets/batterymonitor/package/contents/ui/InhibitionHint.qml
-       applets/batterymonitor/package/contents/ui/InhibitionItem.qml
-       applets/batterymonitor/package/contents/ui/main.qml
-       applets/batterymonitor/package/contents/ui/PopupDialog.qml
-       applets/batterymonitor/package/contents/ui/PowerProfileItem.qml
-       applets/brightness/package/contents/ui/BrightnessItem.qml
-       applets/brightness/package/contents/ui/CompactRepresentation.qml
-       applets/brightness/package/contents/ui/main.qml
-       applets/brightness/package/contents/ui/PopupDialog.qml
+Files: applets/batterymonitor/BatteryItem.qml
+       applets/batterymonitor/CompactRepresentation.qml
+       applets/batterymonitor/InhibitionHint.qml
+       applets/batterymonitor/InhibitionItem.qml
+       applets/batterymonitor/main.qml
+       applets/batterymonitor/PopupDialog.qml
+       applets/batterymonitor/PowerProfileItem.qml
+       applets/brightness/BrightnessItem.qml
+       applets/brightness/CompactRepresentation.qml
+       applets/brightness/main.qml
+       applets/brightness/PopupDialog.qml
        daemon/controllers/displaybrightness.cpp
        daemon/controllers/displaybrightness.h
        daemon/controllers/displaymatch.h

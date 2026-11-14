@@ -6,6 +6,7 @@ powerdevil (4:6.6.6-0ubuntu0.1+foundry1) resolute; urgency=medium
     and cancel obsolete critical-battery action timers.
   * Add ten Core regression cases and run the CTest suite during packaging.
   * Require the matching core library so daemon upgrades include the fix.
+  * Correct moved QML copyright paths and annotate inherited lint exceptions.
 
  -- Foundry Linux <packages@foundrylinux.org>  Sat, 14 Nov 2026 12:54:33 -0000
 
