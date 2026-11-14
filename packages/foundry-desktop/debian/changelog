@@ -1,3 +1,11 @@
+foundry-desktop (1.0.3) resolute; urgency=medium
+
+  * Require PowerDevil with recovered-battery notification fixes so existing
+    desktop installations and future ISO builds receive the corrected service.
+  * Document the existing USB helper command and retain its established name.
+
+ -- Foundry Linux <packages@foundrylinux.org>  Sat, 14 Nov 2026 12:54:33 -0000
+
 foundry-desktop (1.0.2) resolute; urgency=medium
 
   * Move foundry-create-usb.sh to /usr/bin/ (was /usr/local/bin/).
